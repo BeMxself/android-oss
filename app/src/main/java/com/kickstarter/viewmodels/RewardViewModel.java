@@ -24,6 +24,7 @@ import com.kickstarter.viewmodels.outputs.RewardViewModelOutputs;
 
 import org.joda.time.DateTime;
 
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -198,6 +199,12 @@ public final class RewardViewModel extends ActivityViewModel<RewardViewHolder> i
       .subscribe(titleTextViewIsHidden);
 
     reward
+      .map(Reward::description)
+      .map(String::isEmpty)
+      .compose(bindToLifecycle())
+      .subscribe(rewardDescriptionIsHidden);
+
+    reward
       .map(Reward::title)
       .filter(ObjectUtils::isNotNull)
       .compose(bindToLifecycle())
@@ -210,7 +217,7 @@ public final class RewardViewModel extends ActivityViewModel<RewardViewHolder> i
       .subscribe(usdConversionTextViewIsHidden);
 
     projectAndReward
-      .map(pr -> ksCurrency.format(pr.second.minimum(), pr.first, true, true))
+      .map(pr -> ksCurrency.format(pr.second.minimum(), pr.first, true, true, RoundingMode.UP))
       .compose(takeWhen(
         shouldDisplayUsdConversion
           .filter(BooleanUtils::isTrue)
@@ -266,6 +273,7 @@ public final class RewardViewModel extends ActivityViewModel<RewardViewHolder> i
   private final BehaviorSubject<String> usdConversionTextViewText = BehaviorSubject.create();
   private final BehaviorSubject<Boolean> usdConversionTextViewIsHidden = BehaviorSubject.create();
   private final BehaviorSubject<Boolean> whiteOverlayIsHidden = BehaviorSubject.create();
+  private final BehaviorSubject<Boolean> rewardDescriptionIsHidden = BehaviorSubject.create();
 
   public final RewardViewModelInputs inputs = this;
   public final RewardViewModelOutputs outputs = this;
@@ -376,5 +384,9 @@ public final class RewardViewModel extends ActivityViewModel<RewardViewHolder> i
 
   @Override public @NonNull Observable<Boolean> whiteOverlayIsHidden() {
     return whiteOverlayIsHidden;
+  }
+
+  @Override public @NonNull Observable<Boolean> rewardDescriptionIsHidden() {
+    return rewardDescriptionIsHidden;
   }
 }

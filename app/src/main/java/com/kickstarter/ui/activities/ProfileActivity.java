@@ -21,9 +21,9 @@ import com.kickstarter.libs.transformations.CircleTransformation;
 import com.kickstarter.libs.utils.ApplicationUtils;
 import com.kickstarter.libs.utils.ViewUtils;
 import com.kickstarter.models.Project;
-import com.kickstarter.models.User;
 import com.kickstarter.ui.IntentKey;
 import com.kickstarter.ui.adapters.ProfileAdapter;
+import com.kickstarter.ui.views.IconButton;
 import com.kickstarter.viewmodels.ProfileViewModel;
 import com.squareup.picasso.Picasso;
 
@@ -31,23 +31,24 @@ import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
-import rx.android.schedulers.AndroidSchedulers;
+import butterknife.OnClick;
 
-import static com.kickstarter.libs.utils.IntegerUtils.isNonZero;
+import static com.kickstarter.libs.rx.transformers.Transformers.observeForUI;
 
-@RequiresActivityViewModel(ProfileViewModel.class)
-public final class ProfileActivity extends BaseActivity<ProfileViewModel> {
+@RequiresActivityViewModel(ProfileViewModel.ViewModel.class)
+public final class ProfileActivity extends BaseActivity<ProfileViewModel.ViewModel> {
   private ProfileAdapter adapter;
   private RecyclerViewPaginator paginator;
 
-  protected @Bind(R.id.avatar) ImageView avatarImageView;
-  protected @Bind(R.id.user_name) TextView userNameTextView;
-  protected @Bind(R.id.created_num) TextView createdNumTextView;
-  protected @Bind(R.id.backed_num) TextView backedNumTextView;
-  protected @Bind(R.id.created) TextView createdTextView;
-  protected @Bind(R.id.backed) TextView backedTextView;
-  protected @Bind(R.id.divider) View dividerView;
+  protected @Bind(R.id.avatar_image_view) ImageView avatarImageView;
+  protected @Bind(R.id.backed_count_text_view) TextView backedCountTextView;
+  protected @Bind(R.id.backed_text_view) TextView backedTextView;
+  protected @Bind(R.id.created_count_text_view) TextView createdCountTextView;
+  protected @Bind(R.id.created_text_view) TextView createdTextView;
+  protected @Bind(R.id.divider_view) View dividerView;
+  protected @Bind(R.id.messages_button) IconButton messagesButton;
   protected @Bind(R.id.recycler_view) RecyclerView recyclerView;
+  protected @Bind(R.id.user_name_text_view) TextView userNameTextView;
 
   @Override
   protected void onCreate(final @Nullable Bundle savedInstanceState) {
@@ -55,89 +56,125 @@ public final class ProfileActivity extends BaseActivity<ProfileViewModel> {
     setContentView(R.layout.profile_layout);
     ButterKnife.bind(this);
 
-    adapter = new ProfileAdapter(viewModel);
+    this.adapter = new ProfileAdapter(viewModel);
     final int spanCount = ViewUtils.isLandscape(this) ? 3 : 2;
-    recyclerView.setLayoutManager(new GridLayoutManager(this, spanCount));
-    recyclerView.setAdapter(adapter);
+    this.recyclerView.setLayoutManager(new GridLayoutManager(this, spanCount));
+    this.recyclerView.setAdapter(this.adapter);
 
-    paginator = new RecyclerViewPaginator(recyclerView, viewModel.inputs::nextPage);
+    this.paginator = new RecyclerViewPaginator(this.recyclerView, this.viewModel.inputs::nextPage);
 
-    viewModel.outputs.user()
+    this.viewModel.outputs.avatarImageViewUrl()
       .compose(bindToLifecycle())
-      .observeOn(AndroidSchedulers.mainThread())
-      .subscribe(this::setViews);
+      .compose(observeForUI())
+      .subscribe(url -> Picasso.with(this).load(url).transform(new CircleTransformation()).into(this.avatarImageView));
 
-    viewModel.outputs.projects()
+    this.viewModel.outputs.backedCountTextViewHidden()
       .compose(bindToLifecycle())
-      .observeOn(AndroidSchedulers.mainThread())
+      .compose(observeForUI())
+      .subscribe(ViewUtils.setGone(this.backedCountTextView));
+
+    this.viewModel.outputs.backedCountTextViewText()
+      .compose(bindToLifecycle())
+      .compose(observeForUI())
+      .subscribe(this.backedCountTextView::setText);
+
+    this.viewModel.outputs.backedTextViewHidden()
+      .compose(bindToLifecycle())
+      .compose(observeForUI())
+      .subscribe(ViewUtils.setGone(this.backedTextView));
+
+    this.viewModel.outputs.createdCountTextViewHidden()
+      .compose(bindToLifecycle())
+      .compose(observeForUI())
+      .subscribe(ViewUtils.setGone(this.createdCountTextView));
+
+    this.viewModel.outputs.createdCountTextViewText()
+      .compose(bindToLifecycle())
+      .compose(observeForUI())
+      .subscribe(this.createdCountTextView::setText);
+
+    this.viewModel.outputs.createdTextViewHidden()
+      .compose(bindToLifecycle())
+      .compose(observeForUI())
+      .subscribe(ViewUtils.setGone(this.createdTextView));
+
+    this.viewModel.outputs.dividerViewHidden()
+      .compose(bindToLifecycle())
+      .compose(observeForUI())
+      .subscribe(ViewUtils.setGone(this.dividerView));
+
+    this.viewModel.outputs.messagesButtonHidden()
+      .compose(bindToLifecycle())
+      .compose(observeForUI())
+      .subscribe(ViewUtils.setGone(this.messagesButton));
+
+    this.viewModel.outputs.projects()
+      .compose(bindToLifecycle())
+      .compose(observeForUI())
       .subscribe(this::loadProjects);
 
-    viewModel.outputs.showProject()
+    this.viewModel.outputs.resumeDiscoveryActivity()
       .compose(bindToLifecycle())
-      .observeOn(AndroidSchedulers.mainThread())
+      .compose(observeForUI())
+      .subscribe(__ -> resumeDiscoveryActivity());
+
+    this.viewModel.outputs.startMessageThreadsActivity()
+      .compose(bindToLifecycle())
+      .compose(observeForUI())
+      .subscribe(__ -> this.startMessageThreadsActivity());
+
+    this.viewModel.outputs.startProjectActivity()
+      .compose(bindToLifecycle())
+      .compose(observeForUI())
       .subscribe(this::startProjectActivity);
 
-    viewModel.outputs.showDiscovery()
+    this.viewModel.outputs.userNameTextViewText()
       .compose(bindToLifecycle())
-      .observeOn(AndroidSchedulers.mainThread())
-      .subscribe(__ -> startDiscoveryActivity());
+      .compose(observeForUI())
+      .subscribe(this.userNameTextView::setText);
   }
 
   @Override
   protected void onDestroy() {
     super.onDestroy();
-    paginator.stop();
-    recyclerView.setAdapter(null);
+    this.paginator.stop();
+    this.recyclerView.setAdapter(null);
+  }
+
+  @OnClick(R.id.messages_button)
+  public void messagesButtonClicked() {
+    this.viewModel.inputs.messsagesButtonClicked();
   }
 
   private void loadProjects(final @NonNull List<Project> projects) {
     if (projects.size() == 0) {
-      recyclerView.setLayoutManager(new LinearLayoutManager(this));
-      recyclerView.setPadding(0, recyclerView.getPaddingTop(), recyclerView.getPaddingRight(), recyclerView.getPaddingBottom());
+      this.recyclerView.setLayoutManager(new LinearLayoutManager(this));
+      this.recyclerView.setPadding(
+        0, this.recyclerView.getPaddingTop(), this.recyclerView.getPaddingRight(), this.recyclerView.getPaddingBottom()
+      );
+
       if (ViewUtils.isPortrait(this)) {
         disableNestedScrolling();
       }
     }
 
-    adapter.takeProjects(projects);
+    this.adapter.takeProjects(projects);
   }
 
   @TargetApi(21)
   private void disableNestedScrolling() {
     if (ApiCapabilities.canSetNestingScrollingEnabled()) {
-      recyclerView.setNestedScrollingEnabled(false);
+      this.recyclerView.setNestedScrollingEnabled(false);
     }
   }
 
-  private void setViews(final @NonNull User user) {
-    Picasso.with(this).load(user.avatar()
-      .medium())
-      .transform(new CircleTransformation())
-      .into(avatarImageView);
-
-    userNameTextView.setText(user.name());
-
-    final Integer createdNum = user.createdProjectsCount();
-    if (isNonZero(createdNum)) {
-      createdNumTextView.setText(String.valueOf(createdNum));
-    } else {
-      createdTextView.setVisibility(View.GONE);
-      createdNumTextView.setVisibility(View.GONE);
-      dividerView.setVisibility(View.GONE);
-    }
-
-    final Integer backedNum = user.backedProjectsCount();
-    if (isNonZero(backedNum)) {
-      backedNumTextView.setText(String.valueOf(backedNum));
-    } else {
-      backedTextView.setVisibility(View.GONE);
-      backedNumTextView.setVisibility(View.GONE);
-      dividerView.setVisibility(View.GONE);
-    }
-  }
-
-  private void startDiscoveryActivity() {
+  private void resumeDiscoveryActivity() {
     ApplicationUtils.resumeDiscoveryActivity(this);
+  }
+
+  private void startMessageThreadsActivity() {
+    final Intent intent = new Intent(this, MessageThreadsActivity.class);
+    startActivityWithTransition(intent, R.anim.slide_in_right, R.anim.fade_out_slide_out_left);
   }
 
   private void startProjectActivity(final @NonNull Project project) {

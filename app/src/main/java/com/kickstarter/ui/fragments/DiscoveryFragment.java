@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -18,6 +17,7 @@ import com.kickstarter.libs.RecyclerViewPaginator;
 import com.kickstarter.libs.RefTag;
 import com.kickstarter.libs.qualifiers.RequiresFragmentViewModel;
 import com.kickstarter.models.Activity;
+import com.kickstarter.models.Category;
 import com.kickstarter.models.Project;
 import com.kickstarter.services.DiscoveryParams;
 import com.kickstarter.ui.ArgumentsKey;
@@ -30,6 +30,8 @@ import com.kickstarter.ui.adapters.DiscoveryAdapter;
 import com.kickstarter.ui.data.LoginReason;
 import com.kickstarter.viewmodels.DiscoveryFragmentViewModel;
 
+import java.util.List;
+
 import static com.kickstarter.libs.rx.transformers.Transformers.observeForUI;
 import static com.kickstarter.libs.utils.TransitionUtils.slideInFromRight;
 import static com.kickstarter.libs.utils.TransitionUtils.transition;
@@ -41,7 +43,7 @@ public final class DiscoveryFragment extends BaseFragment<DiscoveryFragmentViewM
 
   public DiscoveryFragment() {}
 
-  public static @NonNull Fragment newInstance(final int position) {
+  public static @NonNull DiscoveryFragment newInstance(final int position) {
     final DiscoveryFragment fragment = new DiscoveryFragment();
     final Bundle bundle = new Bundle();
     bundle.putInt(ArgumentsKey.DISCOVERY_SORT_POSITION, position);
@@ -49,9 +51,8 @@ public final class DiscoveryFragment extends BaseFragment<DiscoveryFragmentViewM
     return fragment;
   }
 
-  @Nullable
   @Override
-  public View onCreateView(final @NonNull LayoutInflater inflater, final @Nullable ViewGroup container,
+  public @Nullable View onCreateView(final @NonNull LayoutInflater inflater, final @Nullable ViewGroup container,
     final @Nullable Bundle savedInstanceState) {
     super.onCreateView(inflater, container, savedInstanceState);
 
@@ -113,6 +114,10 @@ public final class DiscoveryFragment extends BaseFragment<DiscoveryFragmentViewM
     }
   }
 
+  public boolean isInstantiated() {
+    return this.recyclerView != null;
+  }
+
   private void startActivityUpdateActivity(final @NonNull Activity activity) {
     final Intent intent = new Intent(getActivity(), WebViewActivity.class)
       .putExtra(IntentKey.URL, activity.projectUpdateUrl());
@@ -137,6 +142,10 @@ public final class DiscoveryFragment extends BaseFragment<DiscoveryFragmentViewM
       .putExtra(IntentKey.REF_TAG, refTag);
     startActivity(intent);
     transition(getActivity(), slideInFromRight());
+  }
+
+  public void takeCategories(final @NonNull List<Category> categories) {
+    viewModel.inputs.rootCategories(categories);
   }
 
   public void updateParams(final @NonNull DiscoveryParams params) {

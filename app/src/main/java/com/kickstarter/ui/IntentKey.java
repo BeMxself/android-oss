@@ -14,10 +14,12 @@ public final class IntentKey {
   public static final String FACEBOOK_USER = "com.kickstarter.kickstarter.intent_facebook_user";
   public static final String INTERNAL_BUILD_ENVELOPE = "com.kickstarter.kickstarter.intent_internal_build_envelope";
   public static final String LOGIN_REASON = "com.kickstarter.kickstarter.intent_login_reason";
+  public static final String MESSAGE_THREAD = "com.kickstarter.kickstarter.intent_message_thread";
   public static final String PASSWORD = "com.kickstarter.kickstarter.intent_password";
   public static final String PROJECT = "com.kickstarter.kickstarter.intent_project";
   public static final String PROJECT_PARAM = "com.kickstarter.kickstarter.intent_project_param";
   public static final String TOOLBAR_TITLE = "com.kickstarter.kickstarter.intent_toolbar_title";
+  public static final String UPDATE = "com.kickstarter.kickstarter.intent_update";
   public static final String URL = "com.kickstarter.kickstarter.intent_url";
   public static final String REF_TAG = "com.kickstarter.kickstarter.ref_tag";
   public static final String MASKED_WALLET = "com.kickstarter.kickstarter.masked_wallet";

@@ -4,7 +4,10 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.view.ViewGroup;
 
+import com.kickstarter.libs.utils.DiscoveryUtils;
+import com.kickstarter.models.Category;
 import com.kickstarter.services.DiscoveryParams;
 import com.kickstarter.ui.ArgumentsKey;
 import com.kickstarter.ui.fragments.DiscoveryFragment;
@@ -15,26 +18,38 @@ import rx.Observable;
 
 public final class DiscoveryPagerAdapter extends FragmentPagerAdapter {
   private final Delegate delegate;
-  private final FragmentManager fragmentManager;
+  private List<DiscoveryFragment> fragments;
   private List<String> pageTitles;
 
   public interface Delegate {
-    void discoveryPagerAdapterCreatedPage(DiscoveryPagerAdapter adapter, int position);
+    void discoveryPagerAdapterSetPrimaryPage(DiscoveryPagerAdapter adapter, int position);
   }
 
-  public DiscoveryPagerAdapter(final @NonNull FragmentManager fragmentManager, final @NonNull List<String> pageTitles,
-    final Delegate delegate) {
+  public DiscoveryPagerAdapter(final @NonNull FragmentManager fragmentManager, final @NonNull List<DiscoveryFragment> fragments,
+    final @NonNull List<String> pageTitles, final Delegate delegate) {
     super(fragmentManager);
+
     this.delegate = delegate;
-    this.fragmentManager = fragmentManager;
+    this.fragments = fragments;
     this.pageTitles = pageTitles;
   }
 
   @Override
-  public Fragment getItem(final int position) {
-    final Fragment result = DiscoveryFragment.newInstance(position);
-    delegate.discoveryPagerAdapterCreatedPage(this, position);
-    return result;
+  public void setPrimaryItem(final @NonNull ViewGroup container, final int position, final @NonNull Object object) {
+    super.setPrimaryItem(container, position, object);
+    this.delegate.discoveryPagerAdapterSetPrimaryPage(this, position);
+  }
+
+  @Override
+  public @NonNull Object instantiateItem(final @NonNull ViewGroup container, final int position) {
+    final DiscoveryFragment fragment = (DiscoveryFragment) super.instantiateItem(container, position);
+    this.fragments.set(position, fragment);
+    return fragment;
+  }
+
+  @Override
+  public @NonNull Fragment getItem(final int position) {
+    return this.fragments.get(position);
   }
 
   @Override
@@ -44,18 +59,31 @@ public final class DiscoveryPagerAdapter extends FragmentPagerAdapter {
 
   @Override
   public CharSequence getPageTitle(final int position) {
-    return pageTitles.get(position);
+    return this.pageTitles.get(position);
+  }
+
+  /**
+   * Passes along root categories to its fragment position to help fetch appropriate projects.
+   */
+  public void takeCategoriesForPosition(final @NonNull List<Category> categories, final int position) {
+    Observable.from(this.fragments)
+      .filter(DiscoveryFragment::isInstantiated)
+      .filter(frag -> {
+        final int fragmentPosition = frag.getArguments().getInt(ArgumentsKey.DISCOVERY_SORT_POSITION);
+        return fragmentPosition == position;
+      })
+      .subscribe(frag -> frag.takeCategories(categories));
   }
 
   /**
    * Take current params from activity and pass to the appropriate fragment.
    */
-  public void takeParams(final @NonNull DiscoveryParams params, final int currentPosition) {
-    Observable.from(fragmentManager.getFragments())
-      .ofType(DiscoveryFragment.class)
+  public void takeParams(final @NonNull DiscoveryParams params) {
+    Observable.from(this.fragments)
+      .filter(DiscoveryFragment::isInstantiated)
       .filter(frag -> {
         final int fragmentPosition = frag.getArguments().getInt(ArgumentsKey.DISCOVERY_SORT_POSITION);
-        return currentPosition == fragmentPosition;
+        return DiscoveryUtils.positionFromSort(params.sort()) == fragmentPosition;
       })
       .subscribe(frag -> frag.updateParams(params));
   }
@@ -64,8 +92,8 @@ public final class DiscoveryPagerAdapter extends FragmentPagerAdapter {
    * Call when the view model tells us to clear specific pages.
    */
   public void clearPages(final @NonNull List<Integer> pages) {
-    Observable.from(fragmentManager.getFragments())
-      .ofType(DiscoveryFragment.class)
+    Observable.from(this.fragments)
+      .filter(DiscoveryFragment::isInstantiated)
       .filter(frag -> {
         final int fragmentPosition = frag.getArguments().getInt(ArgumentsKey.DISCOVERY_SORT_POSITION);
         return pages.contains(fragmentPosition);

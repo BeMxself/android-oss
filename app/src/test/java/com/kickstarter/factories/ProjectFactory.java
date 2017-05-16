@@ -20,6 +20,7 @@ public final class ProjectFactory {
     final Project.Urls.Web web = Project.Urls.Web.builder()
       .project(projectUrl)
       .rewards(projectUrl + "/rewards")
+      .updates(projectUrl + "/posts")
       .build();
 
     return Project.builder()
@@ -42,6 +43,7 @@ public final class ProjectFactory {
       .slug(slug)
       .updatedAt(DateTime.now())
       .urls(Project.Urls.builder().web(web).build())
+      .video(VideoFactory.video())
       .launchedAt(new DateTime().minusDays(10))
       .deadline(new DateTime().plusDays(10))
       .build();
@@ -128,6 +130,7 @@ public final class ProjectFactory {
   public static @NonNull Project halfWayProject() {
     return project()
       .toBuilder()
+      .name("halfwayProject")
       .goal(100.0f)
       .pledged(50.0f)
       .build();
@@ -136,6 +139,7 @@ public final class ProjectFactory {
   public static @NonNull Project allTheWayProject() {
     return project()
       .toBuilder()
+      .name("allTheWayProject")
       .goal(100.0f)
       .pledged(100.0f)
       .build();
@@ -144,6 +148,7 @@ public final class ProjectFactory {
   public static @NonNull Project doubledGoalProject() {
     return project()
       .toBuilder()
+      .name("doubledGoalProject")
       .goal(100.0f)
       .pledged(200.0f)
       .build();
@@ -152,6 +157,7 @@ public final class ProjectFactory {
   public static @NonNull Project failedProject() {
     return project()
       .toBuilder()
+      .name("failedProject")
       .state(Project.STATE_FAILED)
       .build();
   }
@@ -159,6 +165,7 @@ public final class ProjectFactory {
   public static @NonNull Project caProject() {
     return project()
       .toBuilder()
+      .name("caProject")
       .country("CA")
       .currencySymbol("$")
       .currency("CAD")
@@ -169,6 +176,7 @@ public final class ProjectFactory {
   public static @NonNull Project ukProject() {
     return project()
       .toBuilder()
+      .name("ukProject")
       .country("UK")
       .currencySymbol("£")
       .currency("GBP")
@@ -179,6 +187,7 @@ public final class ProjectFactory {
   public static @NonNull Project almostCompletedProject() {
     return project()
       .toBuilder()
+      .name("almostCompleteProject")
       .deadline(new DateTime().plusDays(1))
       .build();
   }
@@ -186,6 +195,7 @@ public final class ProjectFactory {
   public static @NonNull Project successfulProject() {
     return project()
       .toBuilder()
+      .name("successfulProject")
       .deadline(new DateTime().minus(2))
       .state(Project.STATE_SUCCESSFUL)
       .build();

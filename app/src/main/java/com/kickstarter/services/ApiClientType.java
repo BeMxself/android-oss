@@ -9,14 +9,19 @@ import com.kickstarter.models.Category;
 import com.kickstarter.models.Comment;
 import com.kickstarter.models.Empty;
 import com.kickstarter.models.Location;
-import com.kickstarter.models.ProjectNotification;
+import com.kickstarter.models.Message;
+import com.kickstarter.models.MessageThread;
 import com.kickstarter.models.Project;
+import com.kickstarter.models.ProjectNotification;
+import com.kickstarter.models.SurveyResponse;
 import com.kickstarter.models.Update;
 import com.kickstarter.models.User;
 import com.kickstarter.services.apiresponses.AccessTokenEnvelope;
 import com.kickstarter.services.apiresponses.ActivityEnvelope;
 import com.kickstarter.services.apiresponses.CommentsEnvelope;
 import com.kickstarter.services.apiresponses.DiscoverEnvelope;
+import com.kickstarter.services.apiresponses.MessageThreadEnvelope;
+import com.kickstarter.services.apiresponses.MessageThreadsEnvelope;
 
 import java.util.List;
 
@@ -53,9 +58,19 @@ public interface ApiClientType {
 
   @NonNull Observable<Backing> fetchProjectBacking(final @NonNull Project project, final @NonNull User user);
 
-  @NonNull Observable<CommentsEnvelope> fetchProjectComments(final @NonNull Project project);
+  @NonNull Observable<CommentsEnvelope> fetchComments(final @NonNull Project project);
 
-  @NonNull Observable<CommentsEnvelope> fetchProjectComments(final @NonNull String paginationPath);
+  @NonNull Observable<CommentsEnvelope> fetchComments(final @NonNull String paginationPath);
+
+  @NonNull Observable<CommentsEnvelope> fetchComments(final @NonNull Update update);
+
+  @NonNull Observable<MessageThreadEnvelope> fetchMessagesForThread(final @NonNull MessageThread messageThread);
+
+  @NonNull Observable<MessageThreadsEnvelope> fetchMessageThreads();
+
+  @NonNull Observable<MessageThreadsEnvelope> fetchMessageThreads(final @Nullable Project project);
+
+  @NonNull Observable<MessageThreadsEnvelope> fetchMessageThreadsWithPaginationPath(final @NonNull String paginationPath);
 
   @NonNull Observable<Update> fetchUpdate(final @NonNull String projectParam, final @NonNull String updateParam);
 
@@ -69,7 +84,9 @@ public interface ApiClientType {
 
   @NonNull Observable<AccessTokenEnvelope> login(final @NonNull String email, final @NonNull String password, final @NonNull String code);
 
-  @NonNull Observable<Comment> postProjectComment(final @NonNull Project project, final @NonNull String body);
+  @NonNull Observable<Comment> postComment(final @NonNull Project project, final @NonNull String body);
+
+  @NonNull Observable<Comment> postComment(final @NonNull Update update, final @NonNull String body);
 
   @NonNull Observable<Empty> registerPushToken(final @NonNull String token);
 
@@ -77,12 +94,18 @@ public interface ApiClientType {
 
   @NonNull Observable<User> resetPassword(final @NonNull String email);
 
+  @NonNull Observable<Message> sendMessageToThread(final @NonNull MessageThread messageThread, final @NonNull String body);
+
   @NonNull Observable<AccessTokenEnvelope> signup(final @NonNull String name, final @NonNull String email, final @NonNull String password,
     final @NonNull String passwordConfirmation, final boolean sendNewsletters);
 
   @NonNull Observable<Project> starProject(final @NonNull Project project);
 
+  @NonNull Observable<SurveyResponse> surveyResponse(final int surveyResponseId);
+
   @NonNull Observable<Project> toggleProjectStar(final @NonNull Project project);
+
+  @NonNull Observable<List<SurveyResponse>> unansweredSurveys();
 
   @NonNull Observable<ProjectNotification> updateProjectNotifications(final @NonNull ProjectNotification projectNotification, final boolean checked);
 
